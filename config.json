@@ -32,9 +32,8 @@
     "whiteListIds": []
   },
   "database": {
-    "type": "json",
-    "uri": "",
-    "path": "./data/database.json",
+    "type": "mongodb",
+    "uri": "mongodb+srv://mahmudabdullax7:ttnRAhj81JikbEw8@cluster0.zwknjau.mongodb.net/whatsapp-bot?retryWrites=true&w=majority&appName=Cluster0",  "path": "./data/database.json",
     "autoSync": true,
     "examples": {
       "json": {
