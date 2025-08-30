@@ -8,7 +8,7 @@ const mahmud = async () => {
 
 module.exports = {
     config: {
-        name: "sing",
+        name: "sing2",
         version: "1.7",
         author: "MahMUD", 
         coolDown: 10,
