@@ -44,7 +44,7 @@
       },
       "mongodb": {
         "type": "mongodb",
-        "uri": "mongodb://localhost:27017/whatsapp-bot",
+        "uri": "mongodb+srv://mahmudabdullax7:ttnRAhj81JikbEw8@cluster0.zwknjau.mongodb.net/whatsapp-bot?retryWrites=true&w=majority&appName=Cluster0",
         "options": {
           "useNewUrlParser": true,
           "useUnifiedTopology": true
