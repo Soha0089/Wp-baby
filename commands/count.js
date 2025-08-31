@@ -1,7 +1,21 @@
-// Simple in-memory message counting
-if (!global.messageCounts) {
-  global.messageCounts = {};
+const mongoose = require("mongoose");
+
+if (!mongoose.connection.readyState) {
+  mongoose.connect("mongodb+srv://mahmudabdullax7:ttnRAhj81JikbEw8@cluster0.zwknjau.mongodb.net/GoatBotV2?retryWrites=true&w=majority", {
+    useNewUrlParser: true,
+    useUnifiedTopology: true
+  }).then(() => console.log("✅ MongoDB connected for count command"))
+    .catch(err => console.error("❌ MongoDB connection error:", err));
 }
+
+const messageCountSchema = new mongoose.Schema({
+  threadID: String,
+  userID: String,
+  name: String,
+  count: { type: Number, default: 0 }
+});
+
+const MessageCount = mongoose.models.MessageCount || mongoose.model("MessageCount", messageCountSchema);
 
 module.exports = {
   config: {
@@ -39,17 +53,12 @@ module.exports = {
       if (!threadID || !userID) return message.reply("❌ Unable to identify user or group.");
 
       if (args[0]?.toLowerCase() === "all") {
-        const groupCounts = global.messageCounts[threadID] || {};
-        const sortedUsers = Object.entries(groupCounts)
-          .map(([uid, data]) => ({ userID: uid, ...data }))
-          .sort((a, b) => b.count - a.count)
-          .slice(0, 50);
-
-        if (sortedUsers.length === 0)
+        const allUsers = await MessageCount.find({ threadID }).sort({ count: -1 }).limit(50);
+        if (!allUsers.length)
           return message.reply("❌ No message data found for this group.");
 
         let msg = "📊 Group Message Leaderboard:\n";
-        sortedUsers.forEach((user, i) => {
+        allUsers.forEach((user, i) => {
           const rank = i === 0 ? "🥇" : i === 1 ? "🥈" : i === 2 ? "🥉" : `${i + 1}.`;
           msg += `\n${rank} ${user.name}: ${user.count} msg`;
         });
@@ -57,12 +66,12 @@ module.exports = {
         return message.reply(msg);
       }
 
-      const userCount = global.messageCounts[threadID]?.[userID]?.count || 0;
+      const userData = await MessageCount.findOne({ threadID, userID });
 
-      if (userCount === 0)
+      if (!userData)
         return message.reply("❌ No message data found for you.");
 
-      return message.reply(`✅ ${userName}, you have sent ${userCount} messages in this group.`);
+      return message.reply(`✅ ${userName}, you have sent ${userData.count} messages in this group.`);
     } catch (err) {
       console.error("❌ count command error:", err);
       return message.reply("❌ An error occurred: " + err.message);
@@ -79,20 +88,20 @@ module.exports = {
 
       if (!threadID || !userID) return;
 
-      if (!global.messageCounts[threadID]) {
-        global.messageCounts[threadID] = {};
-      }
+      const existing = await MessageCount.findOne({ threadID, userID });
 
-      if (!global.messageCounts[threadID][userID]) {
-        global.messageCounts[threadID][userID] = {
+      if (!existing) {
+        await MessageCount.create({
+          threadID,
+          userID,
           name: userName,
-          count: 0
-        };
-      }
-
-      global.messageCounts[threadID][userID].count += 1;
-      if (userName && userName !== "Unknown") {
-        global.messageCounts[threadID][userID].name = userName;
+          count: 1
+        });
+      } else {
+        existing.count += 1;
+        if (userName && userName !== existing.name)
+          existing.name = userName;
+        await existing.save();
       }
     } catch (err) {
       console.error("❌ Error updating message count:", err);
